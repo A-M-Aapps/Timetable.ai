@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTimetable - AI-Powered Timetable Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+        .subject-color-0 { background: #fef3c7; border-left: 4px solid #f59e0b; }
+        .subject-color-1 { background: #dbeafe; border-left: 4px solid #3b82f6; }
+        .subject-color-2 { background: #dcfce7; border-left: 4px solid #22c55e; }
+        .subject-color-3 { background: #fce7f3; border-left: 4px solid #ec4899; }
+        .subject-color-4 { background: #e0e7ff; border-left: 4px solid #6366f1; }
+        .subject-color-5 { background: #ffedd5; border-left: 4px solid #f97316; }
+        .subject-color-6 { background: #f3e8ff; border-left: 4px solid #a855f7; }
+        .subject-color-7 { background: #ccfbf1; border-left: 4px solid #14b8a6; }
+        .subject-color-8 { background: #fee2e2; border-left: 4px solid #ef4444; }
+        .subject-color-9 { background: #e5e7eb; border-left: 4px solid #6b7280; }
+        .break-slot { background: #f0fdf4; border-left: 4px solid #86efac; }
+        .lunch-slot { background: #fef9c3; border-left: 4px solid #facc15; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-4 px-6 shadow-lg no-print">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <span class="text-2xl">📅</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">SmartTimetable</h1>
+                    <p class="text-xs text-white/80">AI-Powered Scheduling</p>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 text-sm bg-white/10 px-4 py-2 rounded-full">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Generate in &lt;3 seconds
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App -->
+    <main class="max-w-6xl mx-auto p-4 md:p-6">
+        <!-- Step 1: User Type Selection -->
+        <section id="step1" class="fade-in">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Create Your Perfect Timetable</h2>
+                <p class="text-gray-600">Generate balanced, optimized schedules in seconds</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <button onclick="selectUserType('individual')" class="group glass p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-500 cursor-pointer">
+                    <div class="text-5xl mb-4">👨‍🎓</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Individual</h3>
+                    <p class="text-gray-600 text-sm">Students, self-learners, exam preparation</p>
+                </button>
+                
+                <button onclick="selectUserType('school')" class="group glass p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-500 cursor-pointer">
+                    <div class="text-5xl mb-4">🏫</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">School</h3>
+                    <p class="text-gray-600 text-sm">Admins, teachers, class scheduling</p>
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2: Input Form -->
+        <section id="step2" class="hidden fade-in">
+            <div class="glass rounded-2xl shadow-xl p-6 md:p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Configure Your Schedule</h2>
+                        <p class="text-gray-600" id="userTypeLabel">Individual Timetable</p>
+                    </div>
+                    <button onclick="goBack()" class="text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                        <span>←</span> Back
+                    </button>
+                </div>
+
+                <form id="timetableForm" class="space-y-6">
+                    <!-- Subjects Section -->
+                    <div class="bg-gray-50 rounded-xl p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <label class="font-semibold text-gray-700 flex items-center gap-2">
+                                📚 Subjects
+                            </label>
+                            <button type="button" onclick="addSubject()" class="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-purple-700 transition">
+                                + Add Subject
+                            </button>
+                        </div>
+                        <div id="subjectsContainer" class="space-y-2">
+                            <!-- Subject inputs will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Days Selection -->
+                    <div class="bg-gray-50 rounded-xl p-5">
+                        <label class="font-semibold text-gray-700 flex items-center gap-2 mb-4">
+                            📆 Study Days
+                        </label>
+                        <div class="flex flex-wrap gap-2" id="daysContainer">
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Mon" checked class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Mon</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Tue" checked class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Tue</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Wed" checked class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Wed</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Thu" checked class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Thu</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Fri" checked class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Fri</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Sat" class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Sat</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="days" value="Sun" class="hidden peer">
+                                <span class="px-4 py-2 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition block">Sun</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Time Range -->
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-gray-50 rounded-xl p-5">
+                            <label class="font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                🌅 Start Time
+                            </label>
+                            <input type="time" id="startTime" value="09:00" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition">
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-5">
+                            <label class="font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                🌆 End Time
+                            </label>
+                            <input type="time" id="endTime" value="16:00" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition">
+                        </div>
+                    </div>
+
+                    <!-- Slot Duration -->
+                    <div class="bg-gray-50 rounded-xl p-5">
+                        <label class="font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                            ⏱️ Duration per Subject Slot
+                        </label>
+                        <select id="slotDuration" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition">
+                            <option value="30">30 minutes</option>
+                            <option value="45" selected>45 minutes</option>
+                            <option value="60">60 minutes (1 hour)</option>
+                            <option value="90">90 minutes</option>
+                        </select>
+                    </div>
+
+                    <!-- Breaks -->
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-gray-50 rounded-xl p-5">
+                            <label class="font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                ☕ Short Break
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="number" id="shortBreak" value="10" min="5" max="30" class="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition">
+                                <span class="flex items-center text-gray-500">min</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">After every 2 subject slots</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-5">
+                            <label class="font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                🍽️ Lunch Break
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="number" id="lunchBreak" value="45" min="15" max="90" class="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition">
+                                <span class="flex items-center text-gray-500">min</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Around midpoint of the day</p>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="submit" class="w-full gradient-bg text-white font-bold py-4 rounded-xl hover:opacity-90 transition shadow-lg flex items-center justify-center gap-2">
+                        <span>⚡</span> Generate Timetable
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Step 3: Timetable Output -->
+        <section id="step3" class="hidden fade-in">
+            <div class="glass rounded-2xl shadow-xl p-6 md:p-8">
+                <!-- Header -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 no-print">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Your Timetable</h2>
+                        <p class="text-gray-600">Generated just for you ✨</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleView('daily')" id="dailyBtn" class="px-4 py-2 rounded-lg bg-purple-600 text-white font-medium transition">Daily</button>
+                        <button onclick="toggleView('weekly')" id="weeklyBtn" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium transition">Weekly</button>
+                    </div>
+                </div>
+
+                <!-- Day Selector for Daily View -->
+                <div id="daySelector" class="flex gap-2 overflow-x-auto pb-2 mb-6 no-print">
+                    <!-- Days will be populated here -->
+                </div>
+
+                <!-- Timetable Container -->
+                <div id="timetableContainer" class="min-h-[400px]">
+                    <!-- Timetable will be rendered here -->
+                </div>
+
+                <!-- Legend -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h4 class="font-semibold text-gray-700 mb-3">Legend</h4>
+                    <div id="legend" class="flex flex-wrap gap-3">
+                        <!-- Legend items will be populated -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-6 pt-6 border-t border-gray-200 flex flex-wrap gap-3 no-print">
+                    <button onclick="regenerateTimetable()" class="flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition">
+                        🔄 Regenerate
+                    </button>
+                    <button onclick="exportPDF()" class="flex items-center gap-2 px-6 py-3 bg-green-600 text-white hover:bg-green-700 rounded-xl font-medium transition">
+                        📄 Export PDF
+                    </button>
+                    <button onclick="window.print()" class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-xl font-medium transition">
+                        🖨️ Print
+                    </button>
+                    <button onclick="editTimetable()" class="flex items-center gap-2 px-6 py-3 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 rounded-xl font-medium transition">
+                        ✏️ Edit Settings
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 text-gray-500 text-sm no-print">
+        <p>Built with ❤️ by SmartTimetable | Free for personal use</p>
+    </footer>
+
+    <script>
+        // App State
+        let state = {
+            userType: 'individual',
+            subjects: [],
+            days: [],
+            startTime: '09:00',
+            endTime: '16:00',
+            slotDuration: 45,
+            shortBreak: 10,
+            lunchBreak: 45,
+            timetable: {},
+            currentView: 'daily',
+            selectedDay: 'Mon'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            addSubject('Mathematics');
+            addSubject('Science');
+            addSubject('English');
+            addSubject('History');
+            addSubject('Geography');
+            addSubject('Art');
+        });
+
+        // User Type Selection
+        function selectUserType(type) {
+            state.userType = type;
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('userTypeLabel').textContent = 
+                type === 'individual' ? 'Individual Timetable' : 'School Timetable';
+        }
+
+        function goBack() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+        }
+
+        // Subject Management
+        function addSubject(defaultName = '') {
+            const container = document.getElementById('subjectsContainer');
+            const index = container.children.length;
+            const colorIndex = index % 10;
+            
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 fade-in';
+            div.innerHTML = `
+                <div class="w-4 h-4 rounded subject-color-${colorIndex}"></div>
+                <input type="text" 
+                       class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition subject-input" 
+                       placeholder="Subject name"
+                       value="${defaultName}">
+                <button type="button" onclick="removeSubject(this)" class="text-red-500 hover:text-red-700 p-2">
+                    ✕
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeSubject(btn) {
+            const container = document.getElementById('subjectsContainer');
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+                updateSubjectColors();
+            }
+        }
+
+        function updateSubjectColors() {
+            const items = document.querySelectorAll('#subjectsContainer > div');
+            items.forEach((item, index) => {
+                const colorDiv = item.querySelector('div');
+                colorDiv.className = `w-4 h-4 rounded subject-color-${index % 10}`;
+            });
+        }
+
+        // Form Submission
+        document.getElementById('timetableForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Collect subjects
+            const subjectInputs = document.querySelectorAll('.subject-input');
+            state.subjects = Array.from(subjectInputs)
+                .map(input => input.value.trim())
+                .filter(name => name !== '');
+            
+            if (state.subjects.length < 1) {
+                alert('Please add at least one subject!');
+                return;
+            }
+
+            // Collect days
+            const dayCheckboxes = document.querySelectorAll('input[name="days"]:checked');
+            state.days = Array.from(dayCheckboxes).map(cb => cb.value);
+            
+            if (state.days.length < 1) {
+                alert('Please select at least one day!');
+                return;
+            }
+
+            // Collect other inputs
+            state.startTime = document.getElementById('startTime').value;
+            state.endTime = document.getElementById('endTime').value;
+            state.slotDuration = parseInt(document.getElementById('slotDuration').value);
+            state.shortBreak = parseInt(document.getElementById('shortBreak').value);
+            state.lunchBreak = parseInt(document.getElementById('lunchBreak').value);
+
+            // Validate time range
+            if (state.startTime >= state.endTime) {
+                alert('End time must be after start time!');
+                return;
+            }
+
+            generateTimetable();
+        });
+
+        // Timetable Generation Logic
+        function generateTimetable() {
+            state.timetable = {};
+            
+            const startMinutes = timeToMinutes(state.startTime);
+            const endMinutes = timeToMinutes(state.endTime);
+            const totalMinutes = endMinutes - startMinutes;
+            
+            // Calculate lunch time (around midpoint)
+            const midpoint = startMinutes + Math.floor(totalMinutes / 2);
+            
+            state.days.forEach((day, dayIndex) => {
+                state.timetable[day] = [];
+                let currentTime = startMinutes;
+                let slotCount = 0;
+                let subjectIndex = dayIndex % state.subjects.length; // Vary starting subject by day
+                let lunchTaken = false;
+
+                while (currentTime + state.slotDuration <= endMinutes) {
+                    // Check for lunch break
+                    if (!lunchTaken && currentTime >= midpoint - 30) {
+                        state.timetable[day].push({
+                            type: 'lunch',
+                            start: minutesToTime(currentTime),
+                            end: minutesToTime(currentTime + state.lunchBreak),
+                            name: 'Lunch Break'
+                        });
+                        currentTime += state.lunchBreak;
+                        lunchTaken = true;
+                        continue;
+                    }
+
+                    // Add short break every 2 slots
+                    if (slotCount > 0 && slotCount % 2 === 0) {
+                        state.timetable[day].push({
+                            type: 'break',
+                            start: minutesToTime(currentTime),
+                            end: minutesToTime(currentTime + state.shortBreak),
+                            name: 'Short Break'
+                        });
+                        currentTime += state.shortBreak;
+                        
+                        if (currentTime + state.slotDuration > endMinutes) break;
+                    }
+
+                    // Add subject slot
+                    const subject = state.subjects[subjectIndex % state.subjects.length];
+                    state.timetable[day].push({
+                        type: 'subject',
+                        start: minutesToTime(currentTime),
+                        end: minutesToTime(currentTime + state.slotDuration),
+                        name: subject,
+                        subjectIndex: subjectIndex % state.subjects.length
+                    });
+
+                    currentTime += state.slotDuration;
+                    slotCount++;
+                    subjectIndex++;
+                }
+            });
+
+            state.selectedDay = state.days[0];
+            showTimetable();
+        }
+
+        function timeToMinutes(time) {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function minutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+
+        function formatTime(time) {
+            const [hours, mins] = time.split(':').map(Number);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            return `${displayHours}:${mins.toString().padStart(2, '0')} ${ampm}`;
+        }
+
+        // Show Timetable
+        function showTimetable() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            
+            renderDaySelector();
+            renderLegend();
+            
+            if (state.currentView === 'daily') {
+                renderDailyView();
+            } else {
+                renderWeeklyView();
+            }
+        }
+
+        function renderDaySelector() {
+            const container = document.getElementById('daySelector');
+            container.innerHTML = state.days.map(day => `
+                <button onclick="selectDay('${day}')" 
+                        class="px-4 py-2 rounded-lg font-medium transition ${
+                            day === state.selectedDay 
+                                ? 'bg-purple-600 text-white' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }">
+                    ${day}
+                </button>
+            `).join('');
+        }
+
+        function selectDay(day) {
+            state.selectedDay = day;
+            renderDaySelector();
+            if (state.currentView === 'daily') {
+                renderDailyView();
+            }
+        }
+
+        function toggleView(view) {
+            state.currentView = view;
+            document.getElementById('dailyBtn').className = view === 'daily' 
+                ? 'px-4 py-2 rounded-lg bg-purple-600 text-white font-medium transition'
+                : 'px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium transition';
+            document.getElementById('weeklyBtn').className = view === 'weekly'
+                ? 'px-4 py-2 rounded-lg bg-purple-600 text-white font-medium transition'
+                : 'px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium transition';
+            document.getElementById('daySelector').style.display = view === 'daily' ? 'flex' : 'none';
+            
+            if (view === 'daily') {
+                renderDailyView();
+            } else {
+                renderWeeklyView();
+            }
+        }
+
+        function renderDailyView() {
+            const container = document.getElementById('timetableContainer');
+            const slots = state.timetable[state.selectedDay] || [];
+            
+            container.innerHTML = `
+                <div class="text-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">${state.selectedDay}'s Schedule</h3>
+                </div>
+                <div class="space-y-2">
+                    ${slots.map(slot => renderSlot(slot)).join('')}
+                </div>
+            `;
+        }
+
+        function renderSlot(slot) {
+            let slotClass = '';
+            let icon = '';
+            
+            if (slot.type === 'lunch') {
+                slotClass = 'lunch-slot';
+                icon = '🍽️';
+            } else if (slot.type === 'break') {
+                slotClass = 'break-slot';
+                icon = '☕';
+            } else {
+                slotClass = `subject-color-${slot.subjectIndex % 10}`;
+                icon = '📚';
+            }
+
+            return `
+                <div class="p-4 rounded-xl ${slotClass} flex items-center justify-between transition hover:shadow-md">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${icon}</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">${slot.name}</h4>
+                            <p class="text-sm text-gray-600">${formatTime(slot.start)} - ${formatTime(slot.end)}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs bg-white/50 px-2 py-1 rounded-full">${getDuration(slot.start, slot.end)} min</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getDuration(start, end) {
+            return timeToMinutes(end) - timeToMinutes(start);
+        }
+
+        function renderWeeklyView() {
+            const container = document.getElementById('timetableContainer');
+            
+            // Get all unique time slots
+            const allSlots = new Set();
+            Object.values(state.timetable).forEach(daySlots => {
+                daySlots.forEach(slot => {
+                    allSlots.add(`${slot.start}-${slot.end}`);
+                });
+            });
+            
+            // Sort time slots
+            const sortedSlots = Array.from(allSlots).sort((a, b) => {
+                const aStart = timeToMinutes(a.split('-')[0]);
+                const bStart = timeToMinutes(b.split('-')[0]);
+                return aStart - bStart;
+            });
+
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[600px] border-collapse">
+                        <thead>
+                            <tr>
+                                <th class="p-3 bg-gray-100 text-left font-semibold text-gray-700 rounded-tl-lg">Time</th>
+                                ${state.days.map((day, i) => `
+                                    <th class="p-3 bg-gray-100 text-center font-semibold text-gray-700 ${i === state.days.length - 1 ? 'rounded-tr-lg' : ''}">${day}</th>
+                                `).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sortedSlots.map((timeSlot, rowIndex) => {
+                                const [start, end] = timeSlot.split('-');
+                                return `
+                                    <tr class="${rowIndex % 2 === 0 ? 'bg-gray-50' : ''}">
+                                        <td class="p-2 text-sm text-gray-600 border-t border-gray-100">
+                                            ${formatTime(start)}<br>
+                                            <span class="text-xs text-gray-400">${formatTime(end)}</span>
+                                        </td>
+                                        ${state.days.map(day => {
+                                            const slot = state.timetable[day]?.find(s => 
+                                                s.start === start && s.end === end
+                                            );
+                                            if (!slot) return '<td class="p-2 border-t border-gray-100"></td>';
+                                            
+                                            let cellClass = '';
+                                            if (slot.type === 'lunch') cellClass = 'lunch-slot';
+                                            else if (slot.type === 'break') cellClass = 'break-slot';
+                                            else cellClass = `subject-color-${slot.subjectIndex % 10}`;
+                                            
+                                            return `
+                                                <td class="p-1 border-t border-gray-100">
+                                                    <div class="p-2 rounded-lg ${cellClass} text-center text-sm">
+                                                        ${slot.name}
+                                                    </div>
+                                                </td>
+                                            `;
+                                        }).join('')}
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderLegend() {
+            const container = document.getElementById('legend');
+            const items = state.subjects.map((subject, index) => `
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded subject-color-${index % 10}"></div>
+                    <span class="text-sm text-gray-600">${subject}</span>
+                </div>
+            `);
+            
+            items.push(`
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded break-slot"></div>
+                    <span class="text-sm text-gray-600">Short Break</span>
+                </div>
+            `);
+            items.push(`
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded lunch-slot"></div>
+                    <span class="text-sm text-gray-600">Lunch Break</span>
+                </div>
+            `);
+            
+            container.innerHTML = items.join('');
+        }
+
+        // Actions
+        function regenerateTimetable() {
+            generateTimetable();
+        }
+
+        function editTimetable() {
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        }
+
+        function exportPDF() {
+            const element = document.getElementById('timetableContainer');
+            const opt = {
+                margin: 1,
+                filename: `SmartTimetable_${state.userType}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+            
+            // Add temporary styling for PDF
+            const legend = document.getElementById('legend').cloneNode(true);
+            const title = document.createElement('div');
+            title.innerHTML = `<h2 style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">SmartTimetable - ${state.userType === 'individual' ? 'Individual' : 'School'} Schedule</h2>`;
+            
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(title);
+            wrapper.appendChild(element.cloneNode(true));
+            wrapper.appendChild(document.createElement('br'));
+            wrapper.appendChild(legend);
+            
+            html2pdf().set(opt).from(wrapper).save();
+        }
+    </script>
+</body>
+</html>
